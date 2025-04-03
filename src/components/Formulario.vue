@@ -1,55 +1,47 @@
 <script setup>
+  import { reactive, computed } from 'vue';
 
-    import { ref, reactive , computed } from 'vue'
+  const incidencia = reactive({
+      id: '',
+      titulo: '',
+      descripcion: '',
+      urgencia: ''
+  });
 
-    const incidencia = reactive({
-        id: '',
-        titulo: '',
-        descripcion: '',
-        urgencia: ''
-    })
+  const urgencias = ['Baja', 'Media', 'Alta', 'Muy Alta'];
 
-    const urgencias = ['Baja', 'Media', 'Alta', 'Muy Alta']
+  const submitForm = async () => {
+    try {
+        const response = await fetch('http://localhost:8000/incidencias', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(incidencia),
+        });
 
-    const isFormValid = computed(() => {
-        return incidencia.titulo && incidencia.descripcion && incidencia.urgencia
-    })
-
-    const submitForm = async () => {
-        if (isFormValid.value) {
-            try {
-                // Enviar la incidencia al servidor usando fetch
-                const response = await fetch('http://localhost:8000/incidencias', {
-                    method: 'POST',
-                    headers: {
-                    'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(incidencia),
-                })
-
-                if (!response.ok) {
-                    throw new Error('Error al enviar la incidencia')
-                }
-
-                const data = await response.json()
-                console.log('Incidencia enviada:', data)
-            } catch (error) {
-            console.error('Error:', error)
-            }  
-        } else {
-            console.log('Por favor, rellene todos los campos.')
+        if (!response.ok) {
+            throw new Error('Error al enviar la incidencia');
         }
+
+        const data = await response.json();
+        console.log('Incidencia enviada:', data);
+        alert('Incidencia creada con éxito: ' + data.incidencia.titulo);
+
+        // Limpiar el formulario después del envío
+        incidencia.id = '';
+        incidencia.titulo = '';
+        incidencia.descripcion = '';
+        incidencia.urgencia = '';
+
+    } catch (error) {
+        console.error('Error:', error);
     }
+  };
 </script>
 
 <template>
-<v-app>
     <v-container full-width>
-      <!-- Título -->
-      <v-toolbar color="purple" full-width>
-        <v-toolbar-title class="text-h4 text-center">Incidencias</v-toolbar-title>
-      </v-toolbar>
-
       <!-- Título de sección Crear -->
       <fieldset style="">
         <legend>Generar Incidencia</legend>
@@ -58,7 +50,7 @@
           <v-row>
             <v-col cols="12" md="4">
               <v-text-field
-                v-model="incidencia.id"
+                v-model="incidencia.titulo"
                 label="Título de Incidencia"
                 required
                 variant="outlined"
@@ -69,7 +61,7 @@
             
             <v-col cols="12" md="4">
               <v-text-field
-                v-model="incidencia.titulo"
+                v-model="incidencia.descripcion"
                 label="Descripcion de Incidencia"
                 required
                 variant="outlined"
@@ -101,37 +93,21 @@
         </v-form>
       </fieldset>
       
-      <!-- Espacio para la segunda sección -->
-      <fieldset>
-        <legend>Visualizacion de incidencias</legend>
-        <v-btn
-        color="purple"
-        type="submit"
-        class="mt-3"
-        >Mostrar Incidencias</v-btn>
-
-        <v-row>
-          <v-col>
-            
-          </v-col>
-        </v-row>
-      </fieldset>
     </v-container>
-  </v-app>
 </template>
 
-<style>
+<style scoped>
 legend{
-  padding: 0 10px; 
-  font-weight: bold; 
-  color: white !important;
-  background-color:purple ;
-  border-radius: 20px
-}
-fieldset{
-  margin: 10px; 
-  border-radius: 20px; 
-  padding: 20px; 
-  border: 1px solid purple;
-}
+    padding: 0 10px; 
+    font-weight: bold; 
+    color: white;
+    background-color:purple ;
+    border-radius: 20px
+  }
+  fieldset{
+    margin: 10px; 
+    border-radius: 20px; 
+    padding: 20px; 
+    border: 1px solid purple;
+  }
 </style>
