@@ -138,6 +138,10 @@ const eliminarIncidencia = async () => {
     mostrarAlerta('Error al eliminar la incidencia', 'error');
   }
 };
+
+defineExpose({
+  obtenerIncidencias
+});
 </script>
 
 <template>

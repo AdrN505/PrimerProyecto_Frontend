@@ -1,5 +1,7 @@
 <script setup>
-  import { ref, reactive } from 'vue';
+  import { ref, reactive, defineEmits } from 'vue';
+
+  const emit = defineEmits();
 
   const incidencia = reactive({
       id: '',
@@ -32,6 +34,9 @@
         mensajeAlerta.value = 'Incidencia creada con éxito: ' + data.incidencia.titulo;
         alertaVisible.value = true;
         
+        // Emitir el evento a App.vue para que actualice las incidencias
+        emit('incidencia-creada');
+    
         // Hacer que la alerta desaparezca después de 3 segundos
         setTimeout(() => {
             alertaVisible.value = false;
