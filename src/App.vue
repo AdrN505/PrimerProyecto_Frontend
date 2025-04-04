@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import Formulario from './components/Formulario.vue';
 import Incidencias from './components/Incidencias.vue'
+import FormularioIncidencia from './components/incidencias/FormularioIncidencia.vue';
 
 // Usamos ref para hacer referencia al componente Incidencias
 const incidenciasRef = ref(null);
@@ -14,9 +15,8 @@ const handleIncidenciaCreada = () => {
   }
 };
 
-</script>
 
-<template>
+/*
     <v-app>
         <v-container full-width>
             <!-- Título -->
@@ -27,6 +27,11 @@ const handleIncidenciaCreada = () => {
                 <Incidencias ref="incidenciasRef"/>
         </v-container>
     </v-app>
+*/ 
+</script>
+
+<template>
+  <FormularioIncidencia></FormularioIncidencia>
 </template>
 
 <style scoped>
