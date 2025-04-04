@@ -10,6 +10,14 @@ export const ENDPOINTS = {
 // Constantes de la aplicación
 export const NIVELES_URGENCIA = ['Baja', 'Media', 'Alta', 'Muy Alta'];
 
+// Colores para los niveles de urgencia (para usar con Vuetify)
+export const COLORES_URGENCIA = {
+  'muy alta': 'red-darken-4',
+  'alta': 'red',
+  'media': 'amber',
+  'baja': 'green'
+};
+
 export const REGLAS_VALIDACION = {
   requerido: [v => !!v || 'Este campo es requerido']
 };
