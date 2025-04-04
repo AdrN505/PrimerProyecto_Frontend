@@ -82,7 +82,7 @@ export const incidenciasService = {
 
 
     async actualizar(id, incidencia) {
-      const response = await fetch(`/api/incidencias/${id}`, {
+      const response = await fetch(`${ENDPOINTS.INCIDENCIAS}/${id}`, {
         method: 'PATCH', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(incidencia)

@@ -1,20 +1,19 @@
 <script setup>
+// El script se mantiene igual
 import { ref, onMounted } from 'vue';
 import { incidenciasService } from '@/services/incidenciasService';
 import { COLORES_URGENCIA } from '@/config/constants';
 import usePaginacion from '@/composables/usePaginacion';
 import DetalleIncidencia from './DetalleIncidencia.vue';
+import Editar from '@/components/common/botones/Editar.vue'
 
-// Estado para almacenar las incidencias
 const todasLasIncidencias = ref([]);
 const cargando = ref(false);
 const error = ref(null);
-
-// Estado para el diálogo de detalle
 const dialogoDetalle = ref(false);
 const incidenciaSeleccionada = ref(null);
+const displayMobile = ref(false); // Nueva ref para detectar pantallas móviles
 
-// Usar el composable de paginación
 const { 
   paginaActual,
   itemsPerPage,
@@ -24,7 +23,6 @@ const {
   cambiarItemsPorPagina
 } = usePaginacion(todasLasIncidencias);
 
-// Función para obtener las incidencias
 const obtenerIncidencias = async () => {
   cargando.value = true;
   error.value = null;
@@ -39,39 +37,47 @@ const obtenerIncidencias = async () => {
   }
 };
 
-// Función para determinar el color según el nivel de urgencia
 const getUrgenciaColor = (urgencia) => {
   return COLORES_URGENCIA[urgencia?.toLowerCase()] || 'grey';
 };
 
-// Función para mostrar el detalle de la incidencia
 const verDetalle = (incidencia) => {
   incidenciaSeleccionada.value = incidencia;
   dialogoDetalle.value = true;
 };
 
-// Obtener incidencias al montar el componente
-onMounted(obtenerIncidencias);
+// Función para detectar si es una pantalla móvil
+const checkMobileDisplay = () => {
+  displayMobile.value = window.innerWidth < 600;
+};
 
-// Exponer el método para que pueda ser llamado desde fuera
+onMounted(() => {
+  obtenerIncidencias();
+  checkMobileDisplay();
+  window.addEventListener('resize', checkMobileDisplay);
+});
+
 defineExpose({
   obtenerIncidencias
 });
 </script>
 
 <template>
-  <v-container full-width>
+  <v-container :class="{'pa-0': displayMobile}">
     <fieldset>
       <legend>Visualización de Incidencias</legend>
       
       <!-- Controles de actualización -->
-      <div class="d-flex justify-space-between align-center mb-4">
+      <div :class="{'d-flex justify-space-between align-center mb-4': !displayMobile, 
+                    'mb-4': displayMobile}">
         <v-btn 
           color="purple" 
           class="refresh-btn" 
           @click="obtenerIncidencias" 
           :loading="cargando"
           :disabled="cargando"
+          :block="displayMobile"
+          :class="{'mb-2': displayMobile}"
         >
           <v-icon class="mr-2">mdi-refresh</v-icon>
           Actualizar
@@ -85,17 +91,17 @@ defineExpose({
           density="compact"
           hide-details
           class="items-per-page-select"
-          style="max-width: 150px"
+          :style="!displayMobile ? 'max-width: 150px' : 'width: 100%'"
           @update:model-value="cambiarItemsPorPagina"
         ></v-select>
       </div>
       
-      <!-- Indicador de carga -->
+      <!--Circulo de carga lista-->
       <div v-if="cargando" class="d-flex justify-center my-8">
         <v-progress-circular indeterminate color="purple" size="64"></v-progress-circular>
       </div>
-      
-      <!-- Mensaje de error -->
+
+      <!--Mensajes Lista-->
       <v-alert v-else-if="error" type="error" class="mb-4">
         {{ error }}
         <template v-slot:append>
@@ -103,12 +109,10 @@ defineExpose({
         </template>
       </v-alert>
       
-      <!-- Mensaje de lista vacía -->
       <v-alert v-else-if="todasLasIncidencias.length === 0" type="info" class="mb-4">
         No hay incidencias registradas
       </v-alert>
       
-      <!-- Lista de incidencias -->
       <template v-else>
         <v-list class="incidencias-list rounded">
           <v-list-item 
@@ -118,6 +122,7 @@ defineExpose({
             rounded 
             class="mb-2 incidencia-item"
             @click="verDetalle(incidencia)"
+            :class="{'mobile-item': displayMobile}"
           >
             <v-list-item-title class="d-flex align-center">
               <span class="font-weight-bold mr-2">#{{ incidencia.id }}</span>
@@ -135,34 +140,32 @@ defineExpose({
             <template v-slot:append>
               <v-chip 
                 :color="getUrgenciaColor(incidencia.urgencia)" 
-                class="urgencia-chip"
+                class="mr-2"
                 size="small"
                 label
               >
                 {{ incidencia.urgencia }}
               </v-chip>
+              <Editar></Editar>
             </template>
           </v-list-item>
         </v-list>
         
-        <!-- Paginación -->
         <div class="d-flex justify-center mt-4">
           <v-pagination
             v-model="paginaActual"
             :length="totalPaginas"
-            :total-visible="5"
+            :total-visible="displayMobile ? 3 : 5"
             rounded
             color="purple"
           ></v-pagination>
         </div>
         
-        <!-- Información de paginación -->
         <div class="text-caption text-center mt-2">
           Mostrando {{ incidenciasPaginadas.length }} de {{ todasLasIncidencias.length }} incidencias
         </div>
       </template>
       
-      <!-- Componente de detalle -->
       <DetalleIncidencia 
         :show="dialogoDetalle"
         @update:show="dialogoDetalle = $event"
@@ -188,6 +191,18 @@ fieldset {
   border: 1px solid purple;
 }
 
+@media (max-width: 600px) {
+  fieldset {
+    margin: 1px;
+    padding: 5px;
+    border-radius: 0;
+  }
+  
+  .mobile-item {
+    padding: 8px;
+  }
+}
+
 .incidencia-item {
   transition: all 0.2s;
   border-left: 4px solid transparent;
@@ -197,11 +212,6 @@ fieldset {
 .incidencia-item:hover {
   background-color: #f5f5f5;
   border-left-color: #9c27b0;
-}
-
-.urgencia-chip {
-  min-width: 80px;
-  text-align: center;
 }
 
 .items-per-page-select {
