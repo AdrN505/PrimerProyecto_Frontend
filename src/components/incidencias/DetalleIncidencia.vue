@@ -1,8 +1,9 @@
-<!-- components/incidencias/DettalleIncidencia.vue-->
-
+<!-- Parte del script -->
 <script setup>
 import { defineProps, defineEmits, computed, ref, watch } from 'vue';
 import { COLORES_URGENCIA } from '@/config/constants';
+import BotonEditarIncidencia from '../common/botones/BotonEditarIncidencia.vue';
+import BotonEliminarIncidencia from '../common/botones/BotonEliminarIncidencia.vue';
 
 const props = defineProps({
   show: {
@@ -15,10 +16,13 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:show']);
+const emit = defineEmits(['update:show', 'editar', 'eliminar']);
 
 // Estado local para controlar el diálogo
 const dialogVisible = ref(props.show);
+
+// Referencia al componente Editar
+const editorRef = ref(null);
 
 // Sincronizar el estado local con las props
 watch(() => props.show, (newValue) => {
@@ -33,6 +37,38 @@ watch(dialogVisible, (newValue) => {
 // Función para cerrar el diálogo
 const cerrarDialog = () => {
   dialogVisible.value = false;
+};
+
+const abrirEditor = () => {
+  // Buscamos el botón dentro del componente hijo usando querySelector
+  const botonEnComponente = document.querySelector('.editar-oculto .v-btn');
+  if (botonEnComponente) {
+    // Simulamos un clic en el botón encontrado
+    botonEnComponente.click();
+  }
+};
+
+const abrirEliminar = () => {
+  // Buscamos el botón dentro del componente hijo usando querySelector
+  const botonEnComponente = document.querySelector('.eliminar-oculto .v-btn');
+  if (botonEnComponente) {
+    // Simulamos un clic en el botón encontrado
+    botonEnComponente.click();
+  }
+};
+
+// Manejar la guardar edición
+const guardarEdicion = (incidenciaActualizada) => {
+  // Emitir el evento hacia arriba
+  emit('editar', incidenciaActualizada);
+  cerrarDialog();
+};
+
+// Manejar la eliminación
+const guardarEliminacion = (incidenciaAEliminar) => {
+  // Emitir el evento hacia arriba
+  emit('eliminar', incidenciaAEliminar);
+  cerrarDialog();
 };
 
 // Obtener el color según el nivel de urgencia
@@ -70,10 +106,11 @@ const fechaActualizacionFormateada = computed(() => {
 });
 </script>
 
+<!-- Parte del template -->
 <template>
-  <v-dialog 
-    :model-value="dialogVisible" 
-    @update:model-value="dialogVisible = $event" 
+  <v-dialog
+    :model-value="dialogVisible"
+    @update:model-value="dialogVisible = $event"
     max-width="600px"
   >
     <v-card v-if="incidencia">
@@ -81,6 +118,25 @@ const fechaActualizacionFormateada = computed(() => {
         <v-toolbar-title>
           <span class="text-h6">#{{ incidencia.id }} - {{ incidencia.titulo }}</span>
         </v-toolbar-title>
+        <template v-slot:append>
+          <!-- Componente Editar oculto pero accesible por referencia -->
+          <div class="editar-oculto" style="display: none;">
+            <BotonEditarIncidencia
+              ref="editorRef"
+              :incidencia="incidencia"
+              @guardar="guardarEdicion"
+            ></BotonEditarIncidencia>
+          </div>
+          
+          <!-- Componente Eliminar oculto -->
+          <div class="eliminar-oculto" style="display: none;">
+            <BotonEliminarIncidencia
+              :incidencia="incidencia"
+              @guardar="guardarEliminacion"
+              @click.stop
+            ></BotonEliminarIncidencia>
+          </div>
+        </template>
       </v-toolbar>
       
       <v-card-text class="pa-4">
@@ -115,6 +171,16 @@ const fechaActualizacionFormateada = computed(() => {
       
       <v-card-actions class="pa-4">
         <v-spacer></v-spacer>
+        <v-btn color="blue" @click="abrirEditor" class="mr-2">
+          <v-icon left>mdi-pencil</v-icon>
+          Editar
+        </v-btn>
+        
+        <v-btn color="red" @click="abrirEliminar" class="mr-2">
+          <v-icon left>mdi-delete</v-icon>
+          Eliminar
+        </v-btn>
+
         <v-btn color="grey" variant="text" @click="cerrarDialog">
           Cerrar
         </v-btn>

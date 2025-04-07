@@ -82,17 +82,39 @@ export const incidenciasService = {
 
 
     async actualizar(id, incidencia) {
+      console.log('Datos a actualizar:', incidencia);
       const response = await fetch(`${ENDPOINTS.INCIDENCIAS}/${id}`, {
         method: 'PATCH', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(incidencia)
       });
-  
+      
       if (!response.ok) {
         throw new Error('Error al actualizar la incidencia');
       }
   
       return await response.json();
+    },
+
+
+    async eliminar(id, incidencia) {
+      console.log('Datos a eliminar:', incidencia);
+      const response = await fetch(`${ENDPOINTS.INCIDENCIAS}/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+    
+      if (!response.ok) {
+        throw new Error(`Error al eliminar la incidencia: ${response.statusText}`);
+      }
+    
+      // Si el servidor responde con 204 No Content, no intentamos parsear el cuerpo
+      if (response.status === 204) {
+        return { message: 'Incidencia eliminada correctamente' };
+      }
+    
+      // Si la respuesta contiene contenido, parseamos el JSON
+      return await response.json();
     }
-  
+    
 };

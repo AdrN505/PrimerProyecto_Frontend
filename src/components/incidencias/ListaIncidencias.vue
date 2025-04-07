@@ -5,14 +5,23 @@ import { incidenciasService } from '@/services/incidenciasService';
 import { COLORES_URGENCIA } from '@/config/constants';
 import usePaginacion from '@/composables/usePaginacion';
 import DetalleIncidencia from './DetalleIncidencia.vue';
-import Editar from '@/components/common/botones/Editar.vue'
+import BotonEditarIncidencia from '../common/botones/BotonEditarIncidencia.vue';
+import BotonEliminarIncidencia from '../common/botones/BotonEliminarIncidencia.vue';
+import BuscadorIncidencia from './BuscadorIncidencia.vue';
+import { useAlerta } from '@/composables/useAlerta';
+import Alerta from '@/components/common/Alerta.vue';
 
 const todasLasIncidencias = ref([]);
 const cargando = ref(false);
 const error = ref(null);
 const dialogoDetalle = ref(false);
 const incidenciaSeleccionada = ref(null);
-const displayMobile = ref(false); // Nueva ref para detectar pantallas móviles
+const displayMobile = ref(false);
+const incidenciasFiltradas = ref([]);
+
+const manejarResultadosFiltrados = (resultados) => {
+  incidenciasFiltradas.value = resultados;
+};
 
 const { 
   paginaActual,
@@ -21,7 +30,10 @@ const {
   totalPaginas,
   itemsPaginados: incidenciasPaginadas,
   cambiarItemsPorPagina
-} = usePaginacion(todasLasIncidencias);
+} = usePaginacion(incidenciasFiltradas); // Cambiado de todasLasIncidencias a incidenciasFiltradas
+
+// Usando el composable de alerta
+const { alerta, mostrarAlerta } = useAlerta();
 
 const obtenerIncidencias = async () => {
   cargando.value = true;
@@ -29,11 +41,36 @@ const obtenerIncidencias = async () => {
   
   try {
     todasLasIncidencias.value = await incidenciasService.obtenerTodas();
+    incidenciasFiltradas.value = [...todasLasIncidencias.value]; // Inicializar con todas las incidencias
   } catch (err) {
     console.error('Error al obtener incidencias:', err);
     error.value = 'No se pudieron cargar las incidencias';
   } finally {
     cargando.value = false;
+  }
+};
+
+const guardarEdicion = async (incidenciaActualizada) => {
+  try {
+    await incidenciasService.actualizar(incidenciaActualizada.id, incidenciaActualizada);
+    
+    await obtenerIncidencias();
+    await mostrarAlerta('Incidencia editada con éxito ', 'success');
+  } catch (err) {
+    console.error('Error al actualizar incidencia:', err);
+    mostrarAlerta('No se pudo actualizar la incidencia', 'error');
+  }
+};
+
+const guardarEliminacion = async (incidenciaEliminar) => {
+  try {
+    await incidenciasService.eliminar(incidenciaEliminar.id, incidenciaEliminar);
+    
+    await obtenerIncidencias();
+    await mostrarAlerta('Incidencia eliminada con éxito ', 'success');
+  } catch (err) {
+    console.error('Error al eliminar incidencia:', err);
+    mostrarAlerta('No se pudo eliminar la incidencia', 'error');
   }
 };
 
@@ -67,6 +104,14 @@ defineExpose({
     <fieldset>
       <legend>Visualización de Incidencias</legend>
       
+      <!-- Usando el componente de alerta global -->
+      <Alerta
+        :visible="alerta.visible"
+        :mensaje="alerta.mensaje"
+        :tipo="alerta.tipo"
+        @update:visible="alerta.visible = $event"
+      />
+
       <!-- Controles de actualización -->
       <div :class="{'d-flex justify-space-between align-center mb-4': !displayMobile, 
                     'mb-4': displayMobile}">
@@ -96,6 +141,10 @@ defineExpose({
         ></v-select>
       </div>
       
+      <BuscadorIncidencia
+        :incidencias="todasLasIncidencias" 
+        @filtrar-resultados="manejarResultadosFiltrados" 
+      />
       <!--Circulo de carga lista-->
       <div v-if="cargando" class="d-flex justify-center my-8">
         <v-progress-circular indeterminate color="purple" size="64"></v-progress-circular>
@@ -146,7 +195,17 @@ defineExpose({
               >
                 {{ incidencia.urgencia }}
               </v-chip>
-              <Editar></Editar>
+              <BotonEditarIncidencia
+                :incidencia="incidencia"
+                @guardar="guardarEdicion"
+                @click.stop
+              ></BotonEditarIncidencia>
+              <BotonEliminarIncidencia
+                :incidencia="incidencia"
+                @guardar="guardarEliminacion"
+                @click.stop
+                class="ml-2"
+              ></BotonEliminarIncidencia>
             </template>
           </v-list-item>
         </v-list>
@@ -162,7 +221,10 @@ defineExpose({
         </div>
         
         <div class="text-caption text-center mt-2">
-          Mostrando {{ incidenciasPaginadas.length }} de {{ todasLasIncidencias.length }} incidencias
+          Mostrando {{ incidenciasPaginadas.length }} de {{ incidenciasFiltradas.length }} incidencias
+          <template v-if="incidenciasFiltradas.length !== todasLasIncidencias.length">
+            (filtradas de {{ todasLasIncidencias.length }} totales)
+          </template>
         </div>
       </template>
       
@@ -170,6 +232,8 @@ defineExpose({
         :show="dialogoDetalle"
         @update:show="dialogoDetalle = $event"
         :incidencia="incidenciaSeleccionada"
+        @editar="guardarEdicion"
+        @eliminar="guardarEliminacion"
       />
     </fieldset>
   </v-container>

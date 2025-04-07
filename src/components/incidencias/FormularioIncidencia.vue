@@ -7,8 +7,6 @@ import { NIVELES_URGENCIA, REGLAS_VALIDACION } from '@/config/constants';
 import { useAlerta } from '@/composables/useAlerta';
 import Alerta from '@/components/common/Alerta.vue';
 
-const emit = defineEmits(['incidencia-creada']);
-
 // Estado del formulario
 const incidencia = reactive({
   titulo: '',
@@ -38,9 +36,6 @@ const submitForm = async () => {
     
     // Mostrar mensaje de éxito usando el composable
     mostrarAlerta('Incidencia creada con éxito: ' + data.incidencia.titulo, 'success');
-    
-    // Notificar al componente padre
-    emit('incidencia-creada');
     
     // Limpiar el formulario
     incidencia.titulo = '';
