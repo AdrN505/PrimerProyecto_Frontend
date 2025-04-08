@@ -18,9 +18,6 @@ const formulario = reactive({
   urgencia: ''
 });
 
-// Validación básica
-const valido = ref(true);
-
 // Función para abrir el diálogo
 const abrirEditor = () => {
   dialog.value = true;

@@ -105,44 +105,5 @@ const emit = defineEmits(['guardar']);
 </template>
 
 <style>
-/*  <v-dialog :model-value="show" max-width="600px" @update:model-value="emit('update:show', $event)">
-    <v-card>
-      <v-card-title class="text-h5 bg-purple text-white">
-        Editar Incidencia #{{ incidencia?.id }}
-      </v-card-title>
-      
-      <v-card-text class="pt-4">
-        <v-form v-model="valido" @submit.prevent="guardar">
-          <v-text-field
-            v-model="formulario.titulo"
-            label="Título"
-            :rules="reglas.requerido"
-            required
-          ></v-text-field>
-          
-          <v-text-field
-            v-model="formulario.descripcion"
-            label="Descripción"
-            :rules="reglas.requerido"
-            required
-            rows="4"
-          ></v-text-field>
-          
-          <v-select
-            v-model="formulario.urgencia"
-            :items="opcionesUrgencia"
-            label="Nivel de urgencia"
-            :rules="reglas.requerido"
-            required
-          ></v-select>
-        </v-form>
-      </v-card-text>
-      
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="grey" text @click="cerrarEditor">Cancelar</v-btn>
-        <v-btn color="purple" @click="guardar" :disabled="!valido">Guardar Cambios</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>*/
+
 </style>

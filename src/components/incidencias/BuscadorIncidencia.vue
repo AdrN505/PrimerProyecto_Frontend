@@ -1,3 +1,5 @@
+<!--components/incidencias/BuscadorIncidencia.vue-->
+
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 

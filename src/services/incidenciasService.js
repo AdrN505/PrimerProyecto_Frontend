@@ -3,118 +3,107 @@ import { ENDPOINTS } from '@/config/constants';
 
 /**
  * Transforma las fechas de una incidencia de string a objetos Date válidos
- * @param {Object} incidencia - Incidencia a transformar
- * @returns {Object} Incidencia con fechas transformadas
  */
-const transformarFechasIncidencia = (incidencia) => {
-  return {
-    ...incidencia,
-    created_at: incidencia.created_at ? new Date(incidencia.created_at) : null,
-    updated_at: incidencia.updated_at ? new Date(incidencia.updated_at) : null,
-    // Añadir fechasFormateadas para facilitar la visualización
-    fechaCreacion: incidencia.created_at 
-      ? new Date(incidencia.created_at).toLocaleDateString() 
-      : 'Fecha no disponible',
-    fechaActualizacion: incidencia.updated_at 
-      ? new Date(incidencia.updated_at).toLocaleDateString() 
-      : 'Fecha no disponible'
-  };
+const transformarFechasIncidencia = ({ created_at, updated_at, ...incidencia }) => ({
+  ...incidencia,
+  created_at: created_at ? new Date(created_at) : null,
+  updated_at: updated_at ? new Date(updated_at) : null,
+  fechaCreacion: created_at 
+    ? new Date(created_at).toLocaleDateString() 
+    : 'Fecha no disponible',
+  fechaActualizacion: updated_at 
+    ? new Date(updated_at).toLocaleDateString() 
+    : 'Fecha no disponible'
+});
+
+/**
+ * Maneja errores de la API de forma consistente
+ */
+const manejarError = (error, mensaje) => {
+  console.error(`${mensaje}:`, error);
+  throw error;
 };
 
 export const incidenciasService = {
+  // Crear una nueva incidencia
   async crear(incidencia) {
     try {
       const response = await fetch(ENDPOINTS.INCIDENCIAS, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(incidencia),
       });
-
-      if (!response.ok) {
-        throw new Error('Error al enviar la incidencia');
-      }
-
+      
+      if (!response.ok) throw new Error('Error al enviar la incidencia');
       return await response.json();
     } catch (error) {
-      console.error('Error al crear incidencia:', error);
-      throw error;
+      manejarError(error, 'Error al crear incidencia');
     }
   },
-
+  
   // Obtener todas las incidencias
   async obtenerTodas() {
     try {
       const response = await fetch(ENDPOINTS.INCIDENCIAS);
       
-      if (!response.ok) {
-        throw new Error(`Error de red: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Error de red: ${response.status}`);
       
       const incidencias = await response.json();
-      // Transformar las fechas de todas las incidencias
-      return incidencias.map(incidencia => transformarFechasIncidencia(incidencia));
-
+      return incidencias.map(transformarFechasIncidencia);
     } catch (error) {
-      console.error('Error al obtener incidencias:', error);
-      throw error;
+      manejarError(error, 'Error al obtener incidencias');
     }
   },
-  
+    
   // Obtener una incidencia por su ID
   async obtenerPorId(id) {
     try {
       const response = await fetch(`${ENDPOINTS.INCIDENCIAS}/${id}`);
       
-      if (!response.ok) {
-        throw new Error(`Error de red: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Error de red: ${response.status}`);
       
       const incidencia = await response.json();
       return transformarFechasIncidencia(incidencia);
-
     } catch (error) {
-      console.error(`Error al obtener incidencia ${id}:`, error);
-      throw error;
+      manejarError(error, `Error al obtener incidencia ${id}`);
     }
   },
-
-
-    async actualizar(id, incidencia) {
-      console.log('Datos a actualizar:', incidencia);
+     
+  // Actualizar una incidencia existente
+  async actualizar(id, incidencia) {
+    try {
       const response = await fetch(`${ENDPOINTS.INCIDENCIAS}/${id}`, {
-        method: 'PATCH', 
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(incidencia)
       });
       
-      if (!response.ok) {
-        throw new Error('Error al actualizar la incidencia');
-      }
-  
+      if (!response.ok) throw new Error('Error al actualizar la incidencia');
+      
       return await response.json();
-    },
-
-
-    async eliminar(id, incidencia) {
-      console.log('Datos a eliminar:', incidencia);
+    } catch (error) {
+      manejarError(error, 'Error al actualizar incidencia');
+    }
+  },
+     
+  // Eliminar una incidencia
+  async eliminar(id) {
+    try {
       const response = await fetch(`${ENDPOINTS.INCIDENCIAS}/${id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       });
-    
-      if (!response.ok) {
-        throw new Error(`Error al eliminar la incidencia: ${response.statusText}`);
-      }
-    
+      
+      if (!response.ok) throw new Error(`Error al eliminar la incidencia: ${response.statusText}`);
+      
       // Si el servidor responde con 204 No Content, no intentamos parsear el cuerpo
       if (response.status === 204) {
         return { message: 'Incidencia eliminada correctamente' };
       }
-    
-      // Si la respuesta contiene contenido, parseamos el JSON
+      
       return await response.json();
+    } catch (error) {
+      manejarError(error, 'Error al eliminar incidencia');
     }
-    
+  }
 };
