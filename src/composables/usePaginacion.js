@@ -1,11 +1,12 @@
 // composables/usePaginacion.js
 import { ref, computed } from 'vue';
+import { PAGINACION } from '@/config/constants';
 
-export default function usePaginacion(items, itemsPorPagina = 5) {
+export default function usePaginacion(items, itemsPorPagina = PAGINACION.ITEMS_POR_PAGINA_DEFAULT) {
   // Configuración de paginación
   const paginaActual = ref(1);
   const itemsPerPage = ref(itemsPorPagina);
-  const opcionesPaginas = [5, 10, 15, 25, 50];
+  const opcionesPaginas = PAGINACION.OPCIONES_ITEMS_POR_PAGINA;
 
   // Calcular total de páginas
   const totalPaginas = computed(() => {

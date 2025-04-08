@@ -2,8 +2,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { PAGINACION } from '@/config/constants';
 import useIncidencias from '@/composables/useIncidencias';
-import usePaginacion from '@/composables/usePaginacion';
 import useResponsive from '@/composables/useResponsive';
 import DetalleIncidencia from './DetalleIncidencia.vue';
 import BuscadorIncidencia from './BuscadorIncidencia.vue';
@@ -14,24 +14,21 @@ import Alerta from '@/components/common/Alerta.vue';
 const { isMobile } = useResponsive();
 const { 
   incidencias, 
-  incidenciasFiltradas, 
+  paginacion,
+  filtros,
   cargando, 
   error, 
   alerta, 
   obtenerIncidencias, 
+  cambiarPagina,
+  cambiarItemsPorPagina,
+  aplicarFiltros,
   editarIncidencia, 
-  eliminarIncidencia, 
-  aplicarFiltros 
+  eliminarIncidencia
 } = useIncidencias();
 
-const { 
-  paginaActual,
-  itemsPerPage,
-  opcionesPaginas,
-  totalPaginas,
-  itemsPaginados: incidenciasPaginadas,
-  cambiarItemsPorPagina
-} = usePaginacion(incidenciasFiltradas);
+// Obtener niveles de urgencia disponibles (se podría hacer con un servicio aparte)
+const nivelesUrgencia = ref(['Baja', 'Media', 'Alta', 'Muy Alta']);
 
 // State local
 const dialogoDetalle = ref(false);
@@ -41,6 +38,16 @@ const incidenciaSeleccionada = ref(null);
 const verDetalle = (incidencia) => {
   incidenciaSeleccionada.value = incidencia;
   dialogoDetalle.value = true;
+};
+
+// Manejar aplicación de filtros
+const manejarFiltros = (termino, urgencias) => {
+  aplicarFiltros(termino, urgencias);
+};
+
+// Manejar limpieza de filtros
+const limpiarTodosFiltros = () => {
+  aplicarFiltros('', []);
 };
 
 onMounted(obtenerIncidencias);
@@ -80,8 +87,8 @@ defineExpose({
         </v-btn>
         
         <v-select
-          v-model="itemsPerPage"
-          :items="opcionesPaginas"
+          v-model="paginacion.itemsPorPagina"
+          :items="PAGINACION.OPCIONES_ITEMS_POR_PAGINA"
           label="Items por página"
           variant="outlined"
           density="compact"
@@ -94,8 +101,10 @@ defineExpose({
       
       <!-- Buscador de incidencias -->
       <BuscadorIncidencia
-        :incidencias="incidencias" 
-        @filtrar-resultados="aplicarFiltros" 
+        :filtrosActivos="filtros"
+        :nivelesUrgencia="nivelesUrgencia" 
+        @aplicarFiltros="manejarFiltros"
+        @limpiarFiltros="limpiarTodosFiltros" 
       />
 
       <!-- Estados: cargando, error, sin datos -->
@@ -118,7 +127,7 @@ defineExpose({
       <template v-else>
         <v-list class="incidencias-list rounded">
           <ItemIncidencia
-            v-for="incidencia in incidenciasPaginadas" 
+            v-for="incidencia in incidencias" 
             :key="incidencia.id"
             :incidencia="incidencia"
             :isMobile="isMobile"
@@ -131,20 +140,18 @@ defineExpose({
         <!-- Paginación -->
         <div class="d-flex justify-center mt-4">
           <v-pagination
-            v-model="paginaActual"
-            :length="totalPaginas"
+            v-model="paginacion.paginaActual"
+            :length="paginacion.totalPaginas"
             :total-visible="isMobile ? 3 : 5"
             rounded
             color="purple"
+            @update:model-value="cambiarPagina"
           ></v-pagination>
         </div>
         
         <!-- Información de paginación -->
         <div class="text-caption text-center mt-2">
-          Mostrando {{ incidenciasPaginadas.length }} de {{ incidenciasFiltradas.length }} incidencias
-          <template v-if="incidenciasFiltradas.length !== incidencias.length">
-            (filtradas de {{ incidencias.length }} totales)
-          </template>
+          Mostrando {{ incidencias.length }} de {{ paginacion.total }} incidencias
         </div>
       </template>
       

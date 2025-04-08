@@ -4,67 +4,45 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
-  incidencias: {
+  filtrosActivos: {
+    type: Object,
+    required: true,
+    default: () => ({ terminoBusqueda: '', urgencia: [] })
+  },
+  nivelesUrgencia: {
     type: Array,
     required: true,
-    default: () => []
+    default: () => ['Baja', 'Media', 'Alta', 'Muy Alta']
   }
 });
 
-const emit = defineEmits(['filtrar-resultados']);
+const emit = defineEmits(['aplicarFiltros', 'limpiarFiltros']);
 
 // Referencias reactivas para los filtros
-const terminoBusqueda = ref('');
-const filtroUrgencia = ref([]);
+const terminoBusqueda = ref(props.filtrosActivos.terminoBusqueda || '');
+const filtroUrgencia = ref(props.filtrosActivos.urgencia || []);
 const displayMobile = ref(false);
 
-// Lista de niveles de urgencia disponibles (extraídos de las incidencias)
-const nivelesUrgencia = computed(() => {
-  const niveles = new Set();
-  props.incidencias.forEach(incidencia => {
-    if (incidencia.urgencia) {
-      niveles.add(incidencia.urgencia);
-    }
-  });
-  return Array.from(niveles);
-});
-
-// Lógica de filtrado
-const filtrarIncidencias = () => {
-  let resultados = [...props.incidencias];
-  
-  // Filtrar por término de búsqueda (título o ID)
-  if (terminoBusqueda.value.trim()) {
-    const termino = terminoBusqueda.value.trim().toLowerCase();
-    
-    resultados = resultados.filter(incidencia => 
-      (incidencia.titulo && incidencia.titulo.toLowerCase().includes(termino)) || 
-      (incidencia.id && incidencia.id.toString().includes(termino))
-    );
-  }
-  
-  // Filtrar por urgencia
-  if (filtroUrgencia.value.length > 0) {
-    resultados = resultados.filter(incidencia => 
-      incidencia.urgencia && filtroUrgencia.value.includes(incidencia.urgencia)
-    );
-  }
-  
-  // Emitir los resultados filtrados al componente padre
-  emit('filtrar-resultados', resultados);
+// Función para aplicar filtros
+const aplicarFiltros = () => {
+  emit('aplicarFiltros', terminoBusqueda.value, filtroUrgencia.value);
 };
-
-// Detectar cambios en los filtros y actualizar resultados
-watch([terminoBusqueda, filtroUrgencia], () => {
-  filtrarIncidencias();
-}, { deep: true });
 
 // Función para limpiar todos los filtros
 const limpiarFiltros = () => {
   terminoBusqueda.value = '';
   filtroUrgencia.value = [];
-  filtrarIncidencias();
+  emit('limpiarFiltros');
 };
+
+// Detectar cambios en los filtros con un debounce
+let debounceTimer;
+watch([terminoBusqueda, filtroUrgencia], () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    aplicarFiltros();
+  }, 300); // 300ms de debounce para no hacer demasiadas solicitudes
+}, { deep: true });
 
 // Función para detectar si es una pantalla móvil
 const checkMobileDisplay = () => {
@@ -75,13 +53,12 @@ const checkMobileDisplay = () => {
 onMounted(() => {
   checkMobileDisplay();
   window.addEventListener('resize', checkMobileDisplay);
-  // Aplicar filtro inicial para asegurar que se aplica cualquier valor predeterminado
-  filtrarIncidencias();
 });
 
 // Limpieza al desmontar el componente
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobileDisplay);
+  clearTimeout(debounceTimer);
 });
 </script>
 

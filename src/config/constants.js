@@ -21,3 +21,9 @@ export const COLORES_URGENCIA = {
 export const REGLAS_VALIDACION = {
   requerido: [v => !!v || 'Este campo es requerido']
 };
+
+// Constantes de paginación
+export const PAGINACION = {
+  ITEMS_POR_PAGINA_DEFAULT: 5,
+  OPCIONES_ITEMS_POR_PAGINA: [5, 10, 15, 25, 50]
+};

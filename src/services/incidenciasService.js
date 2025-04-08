@@ -1,5 +1,6 @@
 // services/incidenciasService.js
-import { ENDPOINTS } from '@/config/constants';
+import { ENDPOINTS, PAGINACION } from '@/config/constants';
+
 
 /**
  * Transforma las fechas de una incidencia de string a objetos Date válidos
@@ -42,14 +43,43 @@ export const incidenciasService = {
   },
   
   // Obtener todas las incidencias
-  async obtenerTodas() {
+  async obtenerTodas(page = 1, perPage = PAGINACION.ITEMS_POR_PAGINA_DEFAULT, filtros = {}) {
     try {
-      const response = await fetch(ENDPOINTS.INCIDENCIAS);
+      const queryParams = new URLSearchParams();
+      
+      // Añadir parámetros de paginación
+      queryParams.append('page', page);
+      queryParams.append('per_page', perPage);
+      
+      // Añadir filtros si existen
+      if (filtros.search) queryParams.append('search', filtros.search);
+      if (filtros.urgencia && filtros.urgencia.length > 0) {
+        filtros.urgencia.forEach(u => {
+          queryParams.append('urgencia[]', u);
+        });
+      }
+      
+      const response = await fetch(`${ENDPOINTS.INCIDENCIAS}?${queryParams.toString()}`);
       
       if (!response.ok) throw new Error(`Error de red: ${response.status}`);
       
-      const incidencias = await response.json();
-      return incidencias.map(transformarFechasIncidencia);
+      const resultado = await response.json();
+      
+      // Si la respuesta es paginada, usar los datos paginados
+      if (resultado.data) {
+        return {
+          incidencias: resultado.data.map(transformarFechasIncidencia),
+          pagination: {
+            total: resultado.total,
+            currentPage: resultado.current_page,
+            perPage: resultado.per_page,
+            lastPage: resultado.last_page
+          }
+        };
+      }
+      
+      // Si la respuesta no está paginada (compatibilidad con versiones anteriores)
+      return resultado.map(transformarFechasIncidencia);
     } catch (error) {
       manejarError(error, 'Error al obtener incidencias');
     }
